@@ -1,7 +1,7 @@
 # Project related exclusions
 code/task_42/notebooks/
-data/task_42/project_raw_datasets/
 data/task_42/project_42_raw_datasets/
+code/task_42/seamless_input/
 
 # Conda and Virtual Environments
 .conda/
