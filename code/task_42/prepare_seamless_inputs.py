@@ -35,8 +35,9 @@ import pandas as pd
 
 SCRIPT_DIR = Path(__file__).resolve().parent
 REPO_ROOT = SCRIPT_DIR.parent.parent
-RAW_DATA_DIR = REPO_ROOT / "data" / "task_42" / "project_42_raw_datasets"
-OUTPUT_DIR = SCRIPT_DIR / "seamless_input"
+DATA_DIR = REPO_ROOT / "data" / "task_42"
+RAW_DATA_DIR = DATA_DIR / "project_42_raw_datasets"
+OUTPUT_DIR = DATA_DIR / "seamless_input"
 
 sys.path.insert(0, str(SCRIPT_DIR))
 from seamless_robustness import (  # noqa: E402

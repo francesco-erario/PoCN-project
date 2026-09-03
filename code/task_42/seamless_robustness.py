@@ -104,6 +104,10 @@ import numpy as np
 import pandas as pd
 
 
+SCRIPT_DIR = Path(__file__).resolve().parent
+REPO_ROOT = SCRIPT_DIR.parent.parent
+DATA_DIR = REPO_ROOT / "data" / "task_42"
+
 # Type alias for a lightweight adjacency representation.
 Adjacency = Dict[int, "set[int]"]
 
@@ -1519,6 +1523,9 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
                         help="Node labels start from 0 instead of 1.")
 
     args = parser.parse_args(argv)
+
+    if not args.outdir.is_absolute():
+        args.outdir = DATA_DIR / args.outdir
 
     if args.n_attacks < 1:
         raise ValueError("--n-attacks must be >= 1.")

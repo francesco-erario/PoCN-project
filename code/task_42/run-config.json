@@ -1,0 +1,78 @@
+{
+  "python": "python3",
+  "seed": 12345,
+  "n_attacks": 100,
+  "p_step_nodes": 1,
+  "m_min": 1,
+  "m_max": 20,
+  "m_step": 1,
+  "btw_update": 10,
+  "btw_k": null,
+  "engine": "networkit",
+  "protocols": ["random", "degree", "adap_degree", "betweenness", "adap_betweenness", "seamless"],
+  "force": false,
+  "run_order": [
+    "us_airlines",
+    "eu_railways", "eu_railways_adapbtw",
+    "us_powergrid", "us_powergrid_adapbtw",
+    "eu_powergrid", "eu_powergrid_adapbtw"
+  ],
+  "networks": {
+    "us_airlines": {
+      "label": "US Airlines",
+      "enabled": true,
+      "btw_update": 1
+    },
+    "eu_railways": {
+      "label": "EU Railways",
+      "enabled": true,
+      "protocols": ["random", "degree", "adap_degree", "betweenness", "seamless"],
+      "p_step_nodes": 50
+    },
+    "eu_railways_adapbtw": {
+      "label": "EU Railways",
+      "enabled": true,
+      "edge_file": "eu_railways/eu_railways_edgelist.txt",
+      "outdir": "seamless_output/eu_railways_adapbtw",
+      "protocols": ["adap_betweenness"],
+      "n_attacks": 20,
+      "btw_update": 107,
+      "btw_k": 300,
+      "p_step_nodes": 50
+    },
+    "us_powergrid": {
+      "label": "US Power Grid",
+      "enabled": true,
+      "protocols": ["random", "degree", "adap_degree", "betweenness", "seamless"],
+      "p_step_nodes": 70
+    },
+    "us_powergrid_adapbtw": {
+      "label": "US Power Grid",
+      "enabled": true,
+      "edge_file": "us_powergrid/us_powergrid_edgelist.txt",
+      "outdir": "seamless_output/us_powergrid_adapbtw",
+      "protocols": ["adap_betweenness"],
+      "n_attacks": 20,
+      "btw_update": 143,
+      "btw_k": 300,
+      "p_step_nodes": 70
+    },
+    "eu_powergrid": {
+      "label": "EU Power Grid",
+      "enabled": true,
+      "protocols": ["random", "degree", "adap_degree", "betweenness", "seamless"],
+      "p_step_nodes": 130
+    },
+    "eu_powergrid_adapbtw": {
+      "label": "EU Power Grid",
+      "enabled": true,
+      "edge_file": "eu_powergrid/eu_powergrid_edgelist.txt",
+      "outdir": "seamless_output/eu_powergrid_adapbtw",
+      "protocols": ["adap_betweenness"],
+      "n_attacks": 15,
+      "btw_update": 261,
+      "btw_k": 300,
+      "p_step_nodes": 130
+    }
+  }
+}

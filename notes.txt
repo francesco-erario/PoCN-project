@@ -1,0 +1,17 @@
+About errors:
+summary.csv — the ready-to-plot one. For every (protocol, m, removed, p) point it has mean_S1_over_N, sd_S1_over_N, sem_S1_over_N (and same for S2) plus n = replicate count. This is your curve with error bands — plot mean_S1_over_N ± sem_S1_over_N (or ± sd if you want the spread rather than the precision of the mean) directly vs p.
+
+metrics_summary.csv — same idea for scalar metrics per (protocol, m): mean_AUC_S1 ± sd/sem_AUC_S1, plus the percolation thresholds (p_LCC_0.5/0.25/0.1/0.05) and max_S2/p_at_max_S2, each with mean/sd across replicates. This is what you'd put in a results table.
+
+node_scores.csv — per-node mean_removal_rank ± sd_removal_rank across replicates, i.e. error bars on which nodes are consistently vulnerable vs. which ones only rank high by chance in a given replicate.
+
+sem = sd/√n throughout (standard, ddof=1). For degree and betweenness (deterministic, single order) n=1 and sd/sem come out as NaN — that's correct, not a bug, there's no replicate variance to report for a non-stochastic protocol.
+
+Now, do your parameter choices affect this — yes, in three different ways, and they're not the same kind of "error":
+
+1. n_attacks directly sets the SEM, since SEM ∝ 1/√n. You've got n_attacks=100 for random/adap_degree/seamless/static-betweenness, but only 20/20/15 for the three adap_betweenness passes. That means adap_betweenness's error bars will be √(100/20)≈2.2× (eu_railways/us_powergrid) to √(100/15)≈2.6× (eu_powergrid) wider than the other protocols' — purely from replicate count, not because the attack is inherently noisier. Worth a sentence in your report so a reviewer doesn't read "wider band" as "more variable phenomenon."
+2. btw_k (the approximation) doesn't get its own error column — it's silently folded into the same sd/sem. Each replicate gets an independent RNG seed, and that seed also drives which source nodes get sampled for the approximate betweenness estimate at each recompute. So replicate-to-replicate spread in adap_betweenness reflects both genuine protocol stochasticity and k=300 sampling noise, mixed together — you can't separate the two from these files alone. If you wanted to isolate the approximation's own contribution you'd need a targeted side-experiment (fix the replicate seed, vary only btw_k), which isn't part of this run.
+3. btw_update doesn't show up as noise at all — it's a bias, not a variance. Recomputing every ~0.2%·N removals instead of every removal changes what protocol you're actually running (a coarser-adaptive attack), consistently, for every replicate. No number of replicates will reveal this in sd/sem; it's a methodological choice you report qualitatively (as the SCHEDULE.md already does), not something with an error bar.
+4. p_step_nodes affects neither. It only decides which rows of the curve get written/aggregated into summary.csv, i.e. the resolution of the AUC trapezoidal integration — a numerical-discretization question, unrelated to the statistical replicate error above (and negligible at ~1000 points on a smooth curve, as discussed).
+
+So: for a "mean ± SEM" style report, summary.csv/metrics_summary.csv give you that directly, but flag in the text that adap_betweenness's bars are wider partly by construction (lower n) and partly conflated with estimator noise (btw_k), while btw_update is a separate axis you're not measuring uncertainty on at all.
