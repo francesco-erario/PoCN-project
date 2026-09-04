@@ -88,9 +88,11 @@ Dependencies:
 from __future__ import annotations
 
 import argparse
+import concurrent.futures as cf
 import heapq
 import json
 import logging
+import multiprocessing as mp
 import os
 import time
 from collections import defaultdict
@@ -989,6 +991,92 @@ def compute_order(combo: Combo, adj0: Adjacency, rng: np.random.Generator, args:
 
 
 # =============================================================================
+# Parallel execution (worker side)
+# =============================================================================
+
+# Protocols that are safe to distribute across worker PROCESSES. The two
+# betweenness protocols are deliberately excluded: with --engine networkit each
+# betweenness recomputation already uses every core via networkit's internal
+# OpenMP threading, so running several of them in parallel processes would
+# oversubscribe the CPU and be slower, not faster. They run sequentially in the
+# parent process, where networkit gets the whole machine to itself.
+#
+# random / degree / adap_degree / seamless are pure-Python + numpy-RNG with no
+# internal threading, and every combination is fully independent (its own
+# SeedSequence-derived RNG, its own atomically-written output files), so they are
+# embarrassingly parallel. Because each combo re-derives its RNG from
+# (seed, protocol, m, replicate), the results are byte-identical regardless of how
+# many workers run them or in what order they finish.
+PARALLEL_PROTOCOLS = {"random", "degree", "adap_degree", "seamless"}
+
+# Per-worker context, populated once by _worker_init and reused for every combo
+# that worker handles. This avoids pickling the (potentially large) adjacency for
+# every task: the worker reads the edge list once at start-up instead.
+_WORKER_CTX: dict = {}
+
+
+def resolve_n_workers(requested: int) -> int:
+    """Turn the --n-workers request into a concrete worker count.
+
+    0 (or negative) means auto: min(8, CPU count). The cap at 8 targets the
+    performance cores on typical laptops and leaves a couple of cores for the
+    OS, logging and disk IO.
+    """
+    if requested and requested > 0:
+        return requested
+    cpu = os.cpu_count() or 1
+    return max(1, min(8, cpu))
+
+
+def _set_worker_thread_limits() -> None:
+    """Pin thread-pool env vars to 1 so the spawned workers don't each spin up a
+    BLAS/OpenMP thread pool and oversubscribe the CPU. Uses setdefault so an
+    explicit user setting is respected. Called in the parent just before the pool
+    is created so spawned children inherit it at import time."""
+    for var in ("OMP_NUM_THREADS", "OPENBLAS_NUM_THREADS", "MKL_NUM_THREADS",
+                "NUMEXPR_NUM_THREADS", "VECLIB_MAXIMUM_THREADS"):
+        os.environ.setdefault(var, "1")
+
+
+def _worker_init(edge_file: str, include_missing: bool, zero_indexed: bool,
+                 seed: int, p_step_nodes: int, label: str, n_nodes: int,
+                 engine: str, btw_k: Optional[int], btw_update: int) -> None:
+    """Initializer run once per worker process: load the graph and stash context."""
+    adj0 = read_integer_edgelist(
+        Path(edge_file),
+        include_missing_integer_nodes=include_missing,
+        zero_indexed=zero_indexed,
+    )
+    _WORKER_CTX["adj0"] = adj0
+    _WORKER_CTX["args"] = argparse.Namespace(engine=engine, btw_k=btw_k, btw_update=btw_update)
+    _WORKER_CTX["seed"] = seed
+    _WORKER_CTX["p_step_nodes"] = p_step_nodes
+    _WORKER_CTX["label"] = label
+    _WORKER_CTX["n_nodes"] = n_nodes
+
+
+def _worker_run_combo(combo: Combo, partial_dir_str: str) -> Tuple[str, float]:
+    """Compute one combo in a worker process and write its partial files.
+
+    Returns (combo.key, wall_seconds). Raises on an invalid removal order so the
+    parent can fail fast, exactly as the sequential path does.
+    """
+    t0 = time.time()
+    adj0 = _WORKER_CTX["adj0"]
+    n_nodes = _WORKER_CTX["n_nodes"]
+    rng = combo_rng(_WORKER_CTX["seed"], combo)
+    order = compute_order(combo, adj0, rng, _WORKER_CTX["args"])
+    if len(order) != n_nodes or len(set(order)) != n_nodes:
+        raise AssertionError(
+            f"Protocol {combo.protocol} produced an invalid removal order "
+            f"(len={len(order)}, unique={len(set(order))}, expected N={n_nodes})."
+        )
+    curve = robustness_curve(adj0, order, _WORKER_CTX["p_step_nodes"])
+    write_partial(Path(partial_dir_str), combo, _WORKER_CTX["label"], curve, order)
+    return combo.key, time.time() - t0
+
+
+# =============================================================================
 # Incremental partial IO
 # =============================================================================
 
@@ -1394,35 +1482,86 @@ def run_analysis(args: argparse.Namespace) -> None:
         logger.info("Resuming: %d/%d combinations already complete, %d to compute.",
                     n_done_start, total_ops, len(todo))
 
-    # Main compute loop.
-    durations: list[float] = []
-    for i, combo in enumerate(todo, start=1):
-        rng = combo_rng(args.seed, combo)
+    # Split the work. Betweenness protocols run sequentially in this process
+    # (networkit already multithreads each call); everything else is distributed
+    # across worker processes. This keeps every core busy without oversubscribing.
+    todo_seq = [c for c in todo if c.protocol not in PARALLEL_PROTOCOLS]
+    todo_par = [c for c in todo if c.protocol in PARALLEL_PROTOCOLS]
+
+    n_workers = resolve_n_workers(args.n_workers)
+    if len(todo_par) <= 1:
+        n_workers = 1  # not worth spawning a pool for 0 or 1 parallel tasks
+    logger.info("Execution plan: %d sequential (networkit-threaded) + %d parallel "
+                "combo(s); parallel workers = %d.",
+                len(todo_seq), len(todo_par), n_workers)
+
+    n_total_todo = len(todo)
+    wall_start = time.time()
+    completed = {"n": 0}
+
+    def log_done(kind: str, combo: Combo, dt: float) -> None:
+        completed["n"] += 1
+        n = completed["n"]
+        elapsed = time.time() - wall_start
+        rate = n / elapsed if elapsed > 0 else 0.0
+        eta = (n_total_todo - n) / rate if rate > 0 else 0.0
+        m_str = "-" if combo.m is None else str(combo.m)
+        logger.info("[%d/%d] DONE  (%s) %s (m=%s, rep=%d) in %s | elapsed=%s | ETA=%s",
+                    n, n_total_todo, kind, combo.protocol, m_str, combo.stochastic_id,
+                    format_duration(dt), format_duration(elapsed), format_duration(eta))
+
+    def run_one_inline(kind: str, combo: Combo) -> None:
         m_str = "-" if combo.m is None else str(combo.m)
         t0 = time.time()
-        logger.info("[%d/%d] START %s (m=%s, rep=%d)",
-                    i, len(todo), combo.protocol, m_str, combo.stochastic_id)
-
+        logger.info("[.../%d] START (%s) %s (m=%s, rep=%d)",
+                    n_total_todo, kind, combo.protocol, m_str, combo.stochastic_id)
+        rng = combo_rng(args.seed, combo)
         order = compute_order(combo, adj0, rng, args)
-
         # Integrity check: order must be a permutation of the node set.
         if len(order) != n_nodes or len(set(order)) != n_nodes:
             raise AssertionError(
                 f"Protocol {combo.protocol} produced an invalid removal order "
                 f"(len={len(order)}, unique={len(set(order))}, expected N={n_nodes})."
             )
-
         curve = robustness_curve(adj0, order, args.p_step_nodes)
         write_partial(partial_dir, combo, args.label, curve, order)
+        log_done(kind, combo, time.time() - t0)
 
-        dt = time.time() - t0
-        durations.append(dt)
-        avg = sum(durations) / len(durations)
-        remaining = len(todo) - i
-        eta = remaining * avg
-        logger.info("[%d/%d] DONE  %s (m=%s, rep=%d) in %s | avg=%s | ETA=%s",
-                    i, len(todo), combo.protocol, m_str, combo.stochastic_id,
-                    format_duration(dt), format_duration(avg), format_duration(eta))
+    # -------------------- Phase 1: sequential (networkit) --------------------
+    for combo in todo_seq:
+        run_one_inline("seq", combo)
+
+    # -------------------- Phase 2: parallel process pool --------------------
+    if todo_par:
+        if n_workers <= 1:
+            for combo in todo_par:
+                run_one_inline("par", combo)
+        else:
+            _set_worker_thread_limits()
+            init_args = (
+                str(args.edge_file), not args.no_missing_integer_nodes,
+                args.zero_indexed, args.seed, args.p_step_nodes, args.label,
+                n_nodes, args.engine, args.btw_k, args.btw_update,
+            )
+            ctx = mp.get_context("spawn")
+            with cf.ProcessPoolExecutor(
+                max_workers=n_workers, mp_context=ctx,
+                initializer=_worker_init, initargs=init_args,
+            ) as executor:
+                futures = {executor.submit(_worker_run_combo, c, str(partial_dir)): c
+                           for c in todo_par}
+                try:
+                    for fut in cf.as_completed(futures):
+                        combo = futures[fut]
+                        _key, dt = fut.result()  # re-raises any worker exception
+                        log_done("par", combo, dt)
+                except BaseException:
+                    # Stop scheduling new work and let the context manager tear
+                    # down the pool; already-written partials remain on disk and
+                    # the run is resumable.
+                    for f in futures:
+                        f.cancel()
+                    raise
 
     # -------------------- Final assembly pass --------------------
     logger.info("=" * 70)
@@ -1510,6 +1649,13 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     parser.add_argument("--force", action="store_true",
                         help="Ignore existing partial results and recompute every combination from scratch.")
 
+    parser.add_argument("--n-workers", type=int, default=0,
+                        help="Number of worker PROCESSES for the parallelizable protocols "
+                             "(random, degree, adap_degree, seamless). 0 = auto (min(8, CPU count)). "
+                             "betweenness/adap_betweenness always run sequentially because "
+                             "--engine networkit already multithreads each call internally. "
+                             "Results are byte-identical regardless of this value. Default: 0 (auto).")
+
     parser.add_argument("--protocols", nargs="+",
                         default=["random", "degree", "adap_degree", "betweenness", "adap_betweenness", "seamless"],
                         choices=["random", "degree", "adap_degree", "betweenness", "adap_betweenness", "seamless"],
@@ -1541,6 +1687,8 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
         raise ValueError("--btw-update must be >= 1.")
     if args.btw_k is not None and args.btw_k < 1:
         raise ValueError("--btw-k must be >= 1 when set.")
+    if args.n_workers < 0:
+        raise ValueError("--n-workers must be >= 0 (0 = auto).")
 
     return args
 

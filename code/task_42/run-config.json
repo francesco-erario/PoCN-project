@@ -1,5 +1,5 @@
 {
-  "python": "python3",
+  "python": "python",
   "seed": 12345,
   "n_attacks": 100,
   "p_step_nodes": 1,
@@ -9,6 +9,7 @@
   "btw_update": 10,
   "btw_k": null,
   "engine": "networkit",
+  "n_workers": 8,
   "protocols": ["random", "degree", "adap_degree", "betweenness", "adap_betweenness", "seamless"],
   "force": false,
   "run_order": [
@@ -35,9 +36,9 @@
       "edge_file": "eu_railways/eu_railways_edgelist.txt",
       "outdir": "seamless_output/eu_railways_adapbtw",
       "protocols": ["adap_betweenness"],
-      "n_attacks": 20,
-      "btw_update": 107,
-      "btw_k": 300,
+      "n_attacks": 100,
+      "btw_update": 38,
+      "btw_k": 450,
       "p_step_nodes": 50
     },
     "us_powergrid": {
@@ -52,9 +53,9 @@
       "edge_file": "us_powergrid/us_powergrid_edgelist.txt",
       "outdir": "seamless_output/us_powergrid_adapbtw",
       "protocols": ["adap_betweenness"],
-      "n_attacks": 20,
-      "btw_update": 143,
-      "btw_k": 300,
+      "n_attacks": 100,
+      "btw_update": 50,
+      "btw_k": 450,
       "p_step_nodes": 70
     },
     "eu_powergrid": {
@@ -69,9 +70,9 @@
       "edge_file": "eu_powergrid/eu_powergrid_edgelist.txt",
       "outdir": "seamless_output/eu_powergrid_adapbtw",
       "protocols": ["adap_betweenness"],
-      "n_attacks": 15,
-      "btw_update": 261,
-      "btw_k": 300,
+      "n_attacks": 100,
+      "btw_update": 107,
+      "btw_k": 450,
       "p_step_nodes": 130
     }
   }

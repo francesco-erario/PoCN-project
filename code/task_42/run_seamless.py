@@ -43,11 +43,13 @@ VALID_ENGINES = {"networkx", "networkit"}
 
 GLOBAL_KEYS = {
     "python", "seed", "n_attacks", "p_step_nodes", "m_min", "m_max", "m_step",
-    "btw_update", "btw_k", "engine", "protocols", "force", "run_order", "networks",
+    "btw_update", "btw_k", "engine", "protocols", "force", "n_workers",
+    "run_order", "networks",
 }
 NETWORK_KEYS = {
     "label", "enabled", "edge_file", "outdir", "seed", "n_attacks", "p_step_nodes",
     "m_min", "m_max", "m_step", "btw_update", "btw_k", "engine", "protocols", "force",
+    "n_workers",
 }
 TUNABLE_KEYS = NETWORK_KEYS - {"label", "enabled", "edge_file", "outdir"}
 
@@ -130,6 +132,8 @@ def validate_params(slug: str, p: dict) -> None:
         raise ConfigError(f"{slug}: unknown protocol(s) {sorted(bad)}. Allowed: {sorted(VALID_PROTOCOLS)}")
     if not isinstance(p["force"], bool):
         raise ConfigError(f"{slug}: 'force' must be true or false.")
+    if not isinstance(p["n_workers"], int) or p["n_workers"] < 0:
+        raise ConfigError(f"{slug}: 'n_workers' must be an integer >= 0 (0 = auto).")
 
     if p["btw_update"] == 1 and "adap_betweenness" in p["protocols"]:
         print(
@@ -185,6 +189,7 @@ def build_command(python_exe: str, label: str, edge_file: Path, outdir: str, p: 
         "--m-step", str(p["m_step"]),
         "--btw-update", str(p["btw_update"]),
         "--engine", p["engine"],
+        "--n-workers", str(p["n_workers"]),
         "--protocols", *p["protocols"],
     ]
     if p["btw_k"] is not None:
