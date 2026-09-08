@@ -1,0 +1,90 @@
+Task 25 validation report
+alpha = 0.85
+
+======================================================================
+Benchmark: three-level tree (Fig. 7)  (7 nodes, 6 edges)
+======================================================================
+  in/out degree per node (node: in, out):
+    node 1: in=2, out=0
+    node 2: in=2, out=1
+    node 3: in=2, out=1
+    node 4: in=0, out=1
+    node 5: in=0, out=1
+    node 6: in=0, out=1
+    node 7: in=0, out=1
+  classical PageRank (computed vs paper):
+    node 1: 0.372915  (paper 0.372910)
+    node 2: 0.180120  (paper 0.180120)
+    node 3: 0.180120  (paper 0.180120)
+    node 4: 0.066711  (paper 0.066710)
+    node 5: 0.066711  (paper 0.066710)
+    node 6: 0.066711  (paper 0.066710)
+    node 7: 0.066711  (paper 0.066710)
+  max |classical - paper|      = 5.28e-06  -> PASS
+  power-iter vs networkx-free cross-check = 1.38e-13
+  sum of classical PageRank    = 1.0000000000  -> PASS
+  quantum run converged at T = 1200
+  average quantum PageRank / variance per node (computed vs paper):
+    node 1: <Iq>=0.355837 (paper 0.355905)  var=0.0156668
+    node 2: <Iq>=0.151577 (paper 0.151437)  var=0.0067671
+    node 3: <Iq>=0.151577 (paper 0.151437)  var=0.0067671
+    node 4: <Iq>=0.085252 (paper 0.085305)  var=0.0022801
+    node 5: <Iq>=0.085252 (paper 0.085305)  var=0.0022801
+    node 6: <Iq>=0.085252 (paper 0.085305)  var=0.0022801
+    node 7: <Iq>=0.085252 (paper 0.085305)  var=0.0022801
+  paper quantum order (desc): [1, 2, 3, 4, 5, 6, 7]
+  our quantum order  (desc): [1, 2, 3, 4, 5, 6, 7]
+  max |quantum - paper|        = 1.40e-04  -> magnitude PASS
+  quantum ordering matches paper's quantum column -> PASS
+  [three-level tree (Fig. 7)] max |sum_i Iq(t) - 1| over t = 8.22e-15  -> PASS
+  [three-level tree (Fig. 7)] max unitarity norm error         = 1.78e-15  -> PASS
+
+======================================================================
+Benchmark: general 7-node graph (Fig. 8)  (7 nodes, 13 edges)
+======================================================================
+  in/out degree per node (node: in, out):
+    node 1: in=1, out=4
+    node 2: in=2, out=0
+    node 3: in=2, out=3
+    node 4: in=0, out=3
+    node 5: in=3, out=1
+    node 6: in=2, out=1
+    node 7: in=3, out=1
+  classical PageRank (computed vs paper):
+    node 1: 0.051019  (paper 0.051019)
+    node 2: 0.061860  (paper 0.061860)
+    node 3: 0.077924  (paper 0.077924)
+    node 4: 0.028940  (paper 0.028940)
+    node 5: 0.362387  (paper 0.362387)
+    node 6: 0.047981  (paper 0.047981)
+    node 7: 0.369889  (paper 0.369889)
+  max |classical - paper|      = 3.89e-07  -> PASS
+  power-iter vs networkx-free cross-check = 3.92e-13
+  sum of classical PageRank    = 1.0000000000  -> PASS
+  quantum run converged at T = 1200
+  average quantum PageRank / variance per node (computed vs paper):
+    node 1: <Iq>=0.089120 (paper 0.089076)  var=0.0021764
+    node 2: <Iq>=0.126557 (paper 0.126546)  var=0.0050371
+    node 3: <Iq>=0.130632 (paper 0.130587)  var=0.0040175
+    node 4: <Iq>=0.076521 (paper 0.076586)  var=0.0014671
+    node 5: <Iq>=0.217714 (paper 0.217691)  var=0.0110674
+    node 6: <Iq>=0.131269 (paper 0.131345)  var=0.0049238
+    node 7: <Iq>=0.228187 (paper 0.228169)  var=0.0105137
+  paper quantum order (desc): [7, 5, 6, 3, 2, 1, 4]
+  our quantum order  (desc): [7, 5, 6, 3, 2, 1, 4]
+  max |quantum - paper|        = 7.60e-05  -> magnitude PASS
+  quantum ordering matches paper's quantum column -> PASS
+  [general 7-node graph (Fig. 8)] max |sum_i Iq(t) - 1| over t = 3.35e-14  -> PASS
+  [general 7-node graph (Fig. 8)] max unitarity norm error         = 1.78e-15  -> PASS
+
+======================================================================
+SUMMARY (6 numeric checks)
+======================================================================
+  PASS  tree: classical exact match
+  PASS  tree: quantum ordering
+  PASS  tree: normalization + unitarity
+  PASS  general: classical exact match
+  PASS  general: quantum ordering
+  PASS  general: normalization + unitarity
+
+GATE: ALL PASS
