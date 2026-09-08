@@ -77,8 +77,10 @@ implementation and the set of outputs changed. Summary of changes and why:
 
 Input:
     Edge list with integer node labels starting from 1:
-        u v
-    The graph is interpreted as undirected and unweighted.
+        u v [w]
+    The graph is interpreted as undirected and unweighted: any field
+    after the first two is read but ignored (the files written by
+    prepare_seamless_inputs.py carry a constant third column w=1).
     Lines starting with # are ignored. Self-loops are ignored.
 
 Dependencies:
@@ -1613,7 +1615,7 @@ def parse_args(argv: Optional[List[str]] = None) -> argparse.Namespace:
     )
 
     parser.add_argument("--edge-file", required=True, type=Path,
-                        help="Input edge list with integer node labels starting from 1. Format: u v per line.")
+                        help="Input edge list with integer node labels starting from 1. Format: u v [w] per line; any third field is ignored.")
     parser.add_argument("--label", required=True, type=str,
                         help="Required network label written to every output row.")
     parser.add_argument("--outdir", required=True, type=Path, help="Output directory.")

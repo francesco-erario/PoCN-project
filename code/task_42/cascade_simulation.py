@@ -47,7 +47,7 @@ def load_local_graph(network: str, slug: str) -> nx.Graph:
             line = line.strip()
             if not line or line.startswith("#"):
                 continue
-            u, v = line.split()
+            u, v = line.split()[:2]
             G.add_edge(int(u), int(v))
     return G
 

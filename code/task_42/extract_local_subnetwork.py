@@ -56,7 +56,7 @@ def load_full_graph(network: str) -> nx.Graph:
             line = line.strip()
             if not line or line.startswith("#"):
                 continue
-            u, v = line.split()
+            u, v = line.split()[:2]
             G.add_edge(int(u), int(v))
     return G
 

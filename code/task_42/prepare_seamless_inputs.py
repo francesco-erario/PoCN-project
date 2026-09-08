@@ -250,8 +250,11 @@ def write_edgelist(G_relabeled: nx.Graph, path: Path, label: str) -> None:
         f.write(f"# {label} — SEAMLESS input edge list\n")
         f.write(f"# generated: {date.today().isoformat()}\n")
         f.write(f"# N={n} E={e}\n")
+        # Third column is the edge weight, fixed to 1: these networks are
+        # unweighted, but the project brief asks for the three-column
+        # node_from node_to weight format. Readers ignore it.
         for u, v in sorted((min(a, b), max(a, b)) for a, b in G_relabeled.edges()):
-            f.write(f"{u} {v}\n")
+            f.write(f"{u} {v} 1\n")
 
 
 def write_node_mapping(mapping_df: pd.DataFrame, path: Path) -> None:
