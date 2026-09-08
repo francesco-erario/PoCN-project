@@ -3,7 +3,12 @@ code/task_42/notebooks/
 data/task_42/project_42_raw_datasets/
 data/task_42/seamless_input/
 code/task_42/validate_seamless.py
-
+data/task_42/seamless_output/
+notes_task42/
+data/task_42/seamless_input_local/
+data/task_42/seamless_output_local/
+notes_task25/
+data/
 
 # Conda and Virtual Environments
 .conda/
