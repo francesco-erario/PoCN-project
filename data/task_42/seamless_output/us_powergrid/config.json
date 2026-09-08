@@ -1,0 +1,26 @@
+{
+  "edge_file": "/Users/francesco/anaconda_projects/complex_networks/PoCN-project/data/task_42/seamless_input/us_powergrid/us_powergrid_edgelist.txt",
+  "label": "US Power Grid",
+  "outdir": "/Users/francesco/anaconda_projects/complex_networks/PoCN-project/data/task_42/seamless_output/us_powergrid",
+  "seed": 12345,
+  "n_attacks": 100,
+  "p_step_nodes": 70,
+  "m_min": 1,
+  "m_max": 20,
+  "m_step": 1,
+  "btw_update": 10,
+  "btw_k": null,
+  "engine": "networkit",
+  "force": false,
+  "protocols": [
+    "random",
+    "degree",
+    "adap_degree",
+    "betweenness",
+    "seamless"
+  ],
+  "n_nodes": 71856,
+  "n_edges": 87692,
+  "method_name": "SEAMLESS",
+  "method_full_name": "Locally Adaptive Multi-seed Edge-neighborhood Scoring & Sampling"
+}

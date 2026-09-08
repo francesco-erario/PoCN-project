@@ -1,0 +1,27 @@
+{
+  "edge_file": "/Users/francesco/anaconda_projects/complex_networks/PoCN-project/data/task_42/seamless_input/us_airlines/us_airlines_edgelist.txt",
+  "label": "US Airlines",
+  "outdir": "/Users/francesco/anaconda_projects/complex_networks/PoCN-project/data/task_42/seamless_output/us_airlines",
+  "seed": 12345,
+  "n_attacks": 100,
+  "p_step_nodes": 1,
+  "m_min": 1,
+  "m_max": 20,
+  "m_step": 1,
+  "btw_update": 1,
+  "btw_k": null,
+  "engine": "networkit",
+  "force": true,
+  "protocols": [
+    "random",
+    "degree",
+    "adap_degree",
+    "betweenness",
+    "adap_betweenness",
+    "seamless"
+  ],
+  "n_nodes": 488,
+  "n_edges": 12971,
+  "method_name": "SEAMLESS",
+  "method_full_name": "Locally Adaptive Multi-seed Edge-neighborhood Scoring & Sampling"
+}

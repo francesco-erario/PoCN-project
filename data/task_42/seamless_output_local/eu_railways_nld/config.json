@@ -1,0 +1,27 @@
+{
+  "edge_file": "../../data/task_42/seamless_input_local/eu_railways_nld/eu_railways_nld_edgelist.txt",
+  "label": "EU Railways \u2014 Netherlands",
+  "outdir": "/Users/francesco/anaconda_projects/complex_networks/PoCN-project/data/task_42/../../data/task_42/seamless_output_local/eu_railways_nld",
+  "seed": 12345,
+  "n_attacks": 100,
+  "p_step_nodes": 1,
+  "m_min": 1,
+  "m_max": 20,
+  "m_step": 1,
+  "btw_update": 1,
+  "btw_k": null,
+  "engine": "networkit",
+  "force": false,
+  "protocols": [
+    "random",
+    "degree",
+    "adap_degree",
+    "betweenness",
+    "adap_betweenness",
+    "seamless"
+  ],
+  "n_nodes": 517,
+  "n_edges": 663,
+  "method_name": "SEAMLESS",
+  "method_full_name": "Locally Adaptive Multi-seed Edge-neighborhood Scoring & Sampling"
+}
