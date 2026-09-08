@@ -1,0 +1,22 @@
+{
+  "edge_file": "/Users/francesco/anaconda_projects/complex_networks/PoCN-project/data/task_42/seamless_input/eu_railways/eu_railways_edgelist.txt",
+  "label": "EU Railways",
+  "outdir": "/Users/francesco/anaconda_projects/complex_networks/PoCN-project/data/task_42/seamless_output/eu_railways_adapbtw",
+  "seed": 12345,
+  "n_attacks": 100,
+  "p_step_nodes": 50,
+  "m_min": 1,
+  "m_max": 20,
+  "m_step": 1,
+  "btw_update": 38,
+  "btw_k": 450,
+  "engine": "networkit",
+  "force": false,
+  "protocols": [
+    "adap_betweenness"
+  ],
+  "n_nodes": 53995,
+  "n_edges": 62186,
+  "method_name": "SEAMLESS",
+  "method_full_name": "Locally Adaptive Multi-seed Edge-neighborhood Scoring & Sampling"
+}
